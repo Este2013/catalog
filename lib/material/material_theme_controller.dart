@@ -114,10 +114,10 @@ class MaterialThemeController extends ChangeNotifier {
     );
 
     // Scale text without losing the base ThemeData config.
-    final scaledTextTheme = base.textTheme.apply(fontSizeFactor: _textScaleFactor);
-    final scaledPrimaryTextTheme = base.primaryTextTheme.apply(fontSizeFactor: _textScaleFactor);
+    // final scaledTextTheme = base.textTheme.apply(fontSizeFactor: _textScaleFactor);
+    // final scaledPrimaryTextTheme = base.primaryTextTheme.apply(fontSizeFactor: _textScaleFactor);
 
-    return base.copyWith(textTheme: scaledTextTheme, primaryTextTheme: scaledPrimaryTextTheme);
+    return base; //.copyWith(textTheme: scaledTextTheme, primaryTextTheme: scaledPrimaryTextTheme);
   }
 
   static VisualDensity _densityToVisualDensity(DensityPreset preset) {
