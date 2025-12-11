@@ -2,6 +2,7 @@ import 'package:catalog/catalog.dart';
 import 'package:catalog/docs_display.dart';
 import 'package:catalog/material/material_theme_controller.dart';
 import 'package:catalog/material/material_theme_dialog.dart';
+import 'package:catalog/material/widget_tree_explorer.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:path/path.dart';
@@ -178,7 +179,7 @@ class _CatalogItemViewState extends State<CatalogItemView> {
           ),
           body: TabBarView(
             children: [
-              if (widget.item.widgetBuilder != null) widget.item.widgetBuilder!.call(CatalogEntryController()),
+              if (widget.item.widgetBuilder != null) WidgetTreeViewer(child: widget.item.widgetBuilder!.call(CatalogEntryController())),
               if (widget.item.docLink != null) DocsDisplayer(widget.item.docLink!),
             ],
           ),
