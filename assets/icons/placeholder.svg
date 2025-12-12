@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+    height="24px" viewBox="0 -960 960 960" width="24px" fill="#e8eaed">
+    <!-- original rectangle -->
+    <path d="
+M80 -160v-640h800v640H80Z
+M120 -200h720v-560H120Z
+" />
+
+    <!-- diagonals (corner to corner) -->
+    <path d="M110-770 L850-200" fill="#e8eaed" stroke="#e8eaed" stroke-width="40"
+        stroke-linecap="square" />
+    <path d="M850-770 L120-200" fill="#e8eaed" stroke="#e8eaed" stroke-width="40"
+        stroke-linecap="square" />
+</svg>

@@ -1,37 +1,31 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 /// Wrap your screen in this to get:
 /// - A FAB that opens a right-side drawer
 /// - The drawer shows the widget tree of `child` only.
-class WidgetTreeViewer extends StatefulWidget {
+class WidgetTreeExplorer extends StatefulWidget {
   final Widget child;
-  final PreferredSizeWidget? appBar;
 
-  const WidgetTreeViewer({
+  const WidgetTreeExplorer({
     super.key,
     required this.child,
-    this.appBar,
   });
 
   @override
-  State<WidgetTreeViewer> createState() => _WidgetTreeViewerState();
+  State<WidgetTreeExplorer> createState() => _WidgetTreeExplorerState();
 }
 
-class _WidgetTreeViewerState extends State<WidgetTreeViewer> {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+class _WidgetTreeExplorerState extends State<WidgetTreeExplorer> {
   BuildContext? _childContext;
   DiagnosticsNode? _rootNode;
   bool showNullValues = false;
-
   bool disposed = false;
 
   @override
   void dispose() {
     disposed = true;
-
     super.dispose();
   }
 
@@ -48,15 +42,8 @@ class _WidgetTreeViewerState extends State<WidgetTreeViewer> {
     setState(() {});
   }
 
-  void _openTreeDrawer() {
-    _updateTree();
-    _scaffoldKey.currentState?.openEndDrawer();
-  }
-
   @override
   Widget build(BuildContext context) => Scaffold(
-    key: _scaffoldKey,
-    appBar: widget.appBar,
     body: Center(
       child: Builder(
         // This Builder gives us a context whose widget is exactly `widget.child`.
@@ -74,9 +61,16 @@ class _WidgetTreeViewerState extends State<WidgetTreeViewer> {
         },
       ),
     ),
-    floatingActionButton: FloatingActionButton(
-      onPressed: _openTreeDrawer,
-      child: const Icon(Icons.account_tree),
+    floatingActionButton: Builder(
+      builder: (context) {
+        return FloatingActionButton(
+          onPressed: () {
+            _updateTree();
+            Scaffold.of(context).openEndDrawer();
+          },
+          child: const Icon(Icons.account_tree),
+        );
+      },
     ),
     endDrawer: Drawer(
       width: 500,
@@ -97,6 +91,8 @@ class _WidgetTreeViewerState extends State<WidgetTreeViewer> {
                     showNullValues = !showNullValues;
                   }),
                   icon: Icon(Symbols.block),
+                  isSelected: showNullValues,
+                  selectedIcon: Icon(Symbols.circle),
                 ),
               ],
             ),
@@ -141,16 +137,22 @@ class _DiagnosticsTreeViewState extends State<DiagnosticsTreeView> {
     for (int i = 0; i < widget.skip; i++) {
       node = widget.root.getChildren().first;
     }
-    return _DiagnosticsNodeTile(node: widget.root, showNullValues: widget.showNullValues);
+    return Theme(
+      data: Theme.of(context).copyWith(
+        dividerColor: Colors.transparent,
+      ),
+      child: _DiagnosticsNodeTile(node: widget.root, showNullValues: widget.showNullValues),
+    );
   }
 }
 
 class _DiagnosticsNodeTile extends StatelessWidget {
   final DiagnosticsNode node;
+  final int depth;
 
   final bool showNullValues;
 
-  const _DiagnosticsNodeTile({required this.node, required this.showNullValues});
+  const _DiagnosticsNodeTile({required this.node, required this.showNullValues, this.depth = 0});
 
   @override
   Widget build(BuildContext context) {
@@ -160,7 +162,6 @@ class _DiagnosticsNodeTile extends StatelessWidget {
 
     // Basic label: e.g. "Container" or "Align(alignment: center)"
     final titleText = node.toDescription();
-    final subtitleText = node.runtimeType.toString();
 
     final propertyWidgets = properties
         .map((p) {
@@ -168,7 +169,7 @@ class _DiagnosticsNodeTile extends StatelessWidget {
           if (!showNullValues && p.toDescription() == 'null') return null;
           return Padding(
             padding: const EdgeInsets.only(left: 16, bottom: 2),
-            child: Text(
+            child: SelectableText(
               '• ${p.name}: ${p.toDescription()}',
               style: const TextStyle(
                 fontFamily: 'monospace',
@@ -183,32 +184,61 @@ class _DiagnosticsNodeTile extends StatelessWidget {
     if (!hasChildren && properties.isEmpty) {
       return ListTile(
         dense: true,
-        title: Text(
+        visualDensity: VisualDensity.compact,
+        title: SelectableText(
           titleText,
-          style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+          style: const TextStyle(fontFamily: 'monospace', fontWeight: .bold),
         ),
-        subtitle: Text(subtitleText, style: const TextStyle(fontSize: 10)),
       );
     }
 
-    return ExpansionTile(
-      initiallyExpanded: true,
-      dense: true,
-      tilePadding: const EdgeInsets.symmetric(horizontal: 8),
-      title: Text(
-        titleText,
-        style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
-      ),
-      subtitle: Text(subtitleText, style: const TextStyle(fontSize: 10)),
-      children: [
-        ...propertyWidgets,
-        ...children.map(
-          (c) => _DiagnosticsNodeTile(
-            node: c,
-            showNullValues: showNullValues,
+    if (depth == 0) {
+      return Column(
+        crossAxisAlignment: .start,
+        children: [
+          Text(
+            titleText,
+            style: const TextStyle(fontFamily: 'monospace', fontWeight: .bold),
           ),
+
+          ...propertyWidgets,
+          ...children.map(
+            (c) => _DiagnosticsNodeTile(
+              node: c,
+              showNullValues: showNullValues,
+              depth: depth + 1,
+            ),
+          ),
+        ],
+      );
+    }
+    return Card(
+      color: depth % 2 == 0 ? null : Theme.of(context).colorScheme.surfaceContainerHighest,
+      margin: depth == 0 ? EdgeInsets.zero : EdgeInsets.only(left: 8, top: 8),
+      clipBehavior: .hardEdge,
+      child: ExpansionTile(
+        initiallyExpanded: true,
+        dense: true,
+        visualDensity: VisualDensity.compact,
+        tilePadding: const EdgeInsets.symmetric(horizontal: 8),
+        title: Text(
+          titleText,
+          style: const TextStyle(fontFamily: 'monospace', fontWeight: .bold),
         ),
-      ],
+
+        expandedAlignment: .centerLeft,
+        expandedCrossAxisAlignment: .start,
+        children: [
+          ...propertyWidgets,
+          ...children.map(
+            (c) => _DiagnosticsNodeTile(
+              node: c,
+              showNullValues: showNullValues,
+              depth: depth + 1,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -103,8 +103,9 @@ class _MaterialPreviewHomeState extends State<MaterialPreviewHome> {
                     children: [
                       for (var w in WidgetCatalog().entries) // TODO add material list
                         ListTile(
+                          visualDensity: VisualDensity.compact,
                           selected: w.widgetName == selected?.widgetName,
-                          leading: w.icon ?? WidgetCatalog().fallbackEntryIcon,
+                          leading: w.icon ?? w.iconBuilder?.call(context, w.widgetName == selected?.widgetName ? Theme.of(context).colorScheme.primary : null) ?? WidgetCatalog().fallbackEntryIcon,
                           title: Text(w.widgetName),
                           onTap: () => setState(() {
                             selected = w;
@@ -134,6 +135,8 @@ class CatalogItemView extends StatefulWidget {
 }
 
 class _CatalogItemViewState extends State<CatalogItemView> {
+  bool showWidgetOptions = true;
+
   @override
   Widget build(BuildContext context) => Container(
     margin: EdgeInsets.all(8),
@@ -179,7 +182,39 @@ class _CatalogItemViewState extends State<CatalogItemView> {
           ),
           body: TabBarView(
             children: [
-              if (widget.item.widgetBuilder != null) WidgetTreeViewer(child: widget.item.widgetBuilder!.call(CatalogEntryController())),
+              if (widget.item.widgetBuilder != null)
+                Row(
+                  children: [
+                    if (showWidgetOptions)
+                      Container(
+                        width: 400,
+                        padding: const EdgeInsets.only(left: 16.0, top: 8, bottom: 8),
+                        child: Column(
+                          children: [
+                            Row(
+                              children: [
+                                const Text(
+                                  'Widget parameters',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                Spacer(),
+                                IconButton(
+                                  onPressed: null,
+                                  icon: Icon(Symbols.refresh),
+                                ),
+                              ],
+                            ),
+                            Expanded(
+                              child: Text('data'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    if (showWidgetOptions) VerticalDivider(),
+                    Expanded(child: WidgetTreeExplorer(child: widget.item.widgetBuilder!.call(CatalogEntryController()))),
+                  ],
+                ),
+
               if (widget.item.docLink != null) DocsDisplayer(widget.item.docLink!),
             ],
           ),
