@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
-import 'package:material_symbols_icons/symbols.dart';
 
 class Catalog {
   final String catalogName;
@@ -16,18 +14,26 @@ class CatalogEntry {
   String widgetName;
   String? docLink;
   Widget? icon;
-  Widget Function(BuildContext context, Color? iconColor)? iconBuilder;
 
+  Widget Function(BuildContext context, Color? iconColor)? iconBuilder;
   Widget Function(CatalogEntryController controller)? widgetBuilder;
 
-  CatalogEntry(this.widgetName, {this.docLink, this.icon, this.iconBuilder, this.widgetBuilder}) : assert(!(icon != null && iconBuilder != null), 'Can only provide icon or iconBuilder (not both)');
+  List<CatalogPropertyData> defaultParameters;
+
+  CatalogEntry(this.widgetName, {this.docLink, this.icon, this.iconBuilder, this.widgetBuilder, this.defaultParameters = const []}) : assert(!(icon != null && iconBuilder != null), 'Can only provide icon or iconBuilder (not both)');
+
+  CatalogEntryController createDefaultController() {
+    return CatalogEntryController(propertyData: defaultParameters);
+  }
 }
 
 class CatalogEntryController extends ChangeNotifier {
   /// State to be used by the widget. For exemple, define the selected state of a checkbox in here.
   Map<String, dynamic> state = {};
 
+  /// Data concerning the properties passed programatically to the widget.
   List<CatalogPropertyData> propertyData;
+  late Map<String, dynamic> propertyValues;
 
   /// ThemeData used around the widget view.
   ThemeData? _data;
@@ -36,54 +42,54 @@ class CatalogEntryController extends ChangeNotifier {
 
   CatalogEntryController({
     this.propertyData = const [],
-  });
-}
+  }) {
+    propertyValues = {};
+    for (var p in propertyData) {
+      if (p is BooleanPropertyData) {
+        propertyValues[p.name] = p.defaultValue;
+      }
+    }
+  }
 
-/// Common widgets from flutter/widgets.dart.
-class WidgetCatalog extends Catalog {
-  WidgetCatalog()
-    : super(
-        catalogName: 'Widgets',
-        catalogPackage: 'flutter/widgets.dart',
-        entries: [
-          CatalogEntry(
-            'Icon',
-            docLink: 'https://api.flutter.dev/flutter/widgets/Icon-class.html',
-            icon: Icon(Symbols.emoji_symbols),
-            widgetBuilder: (controller) => Icon(Symbols.star),
-          ),
-          CatalogEntry(
-            'Placeholder',
-            docLink: 'https://api.flutter.dev/flutter/widgets/Placeholder-class.html',
-            // icon: Icon(Symbols.rectangle),
-            iconBuilder: (BuildContext context, Color? iconColor) => SvgPicture.asset(
-              'assets/icons/placeholder.svg',
-              height: 24,
-              width: 24,
-
-              colorFilter: ColorFilter.mode(iconColor ?? Theme.of(context).listTileTheme.iconColor ?? Theme.of(context).iconTheme.color!, .srcIn),
-            ),
-            widgetBuilder: (controller) => Placeholder(),
-          ),
-        ],
-        fallbackEntryIcon: Icon(Symbols.widgets),
-      );
+  void setValue(String name, dynamic value) {
+    if (propertyValues[name] == value) return;
+    propertyValues[name] = value;
+    notifyListeners();
+  }
 }
 
 /// Defines the characteristics of a property: authorized values, range, how to display it...
-class CatalogPropertyData {
+abstract class CatalogPropertyData {
   final String name;
-  final PropertyValueData valueData;
-
-  CatalogPropertyData(this.name, {required this.valueData});
-}
-
-abstract class PropertyValueData {
   final Type type;
   final bool nullAllowed;
-  PropertyValueData({required this.type, required this.nullAllowed});
+
+  CatalogPropertyData(this.name, {required this.type, required this.nullAllowed});
 }
 
-class NumRangePropertyValueData extends PropertyValueData {
-  NumRangePropertyValueData({Type? type, super.nullAllowed = false}) : super(type: type ?? num);
+class NumRangePropertyData extends CatalogPropertyData {
+  NumRangePropertyData(super.name, {Type? type, super.nullAllowed = false, this.maximum, this.minimum, this.defaultValue, this.defaultValueWhenNotNull, this.integersOnly = false}) : super(type: type ?? num);
+
+  final num? minimum, maximum, defaultValue, defaultValueWhenNotNull;
+  final bool integersOnly;
+}
+
+class BooleanPropertyData extends CatalogPropertyData {
+  BooleanPropertyData(super.name, {this.defaultValue, super.nullAllowed = false}) : super(type: bool);
+
+  final bool? defaultValue;
+}
+
+class EnumPropertyData<T extends Object> extends CatalogPropertyData {
+  EnumPropertyData(super.name, {this.defaultValue, super.nullAllowed = false, required this.choices}) : super(type: T);
+
+  final T? defaultValue;
+  final List<T> choices;
+}
+
+class ColorPropertyData extends CatalogPropertyData {
+  ColorPropertyData(super.name, {this.defaultValue, super.nullAllowed = false, this.choices}) : super(type: Color);
+
+  final Color? defaultValue;
+  final List<Color>? choices;
 }
