@@ -120,7 +120,9 @@ class _MaterialPreviewHomeState extends State<MaterialPreviewHome> {
           ),
         ),
         // single widget explorer
-        Expanded(child: selected == null ? Placeholder() : CatalogItemView(selected!)),
+        Expanded(
+          child: selected == null ? Placeholder() : CatalogItemView(selected!, key: Key(selected?.widgetName ?? 'no widget')),
+        ),
       ],
     ),
   );
@@ -218,7 +220,16 @@ class _CatalogItemViewState extends State<CatalogItemView> {
                                   child: Column(
                                     children: [
                                       for (var p in widget.item.defaultParameters)
-                                        if (p is BooleanPropertyData)
+                                        if (p is MultipleObjectTypeChoice)
+                                          MultipleObjectChoiceEntryProperty(
+                                            p,
+                                            value: itemController.propertyValues[p.name],
+                                            setNullStatus: (bool b) => itemController.setValue(p.name, null),
+                                            // editValue: (newValue) => itemController.setValue(p.name, newValue),
+                                          )
+                                        else if (p is ObjectPropertyData)
+                                          Placeholder(fallbackHeight: 200, fallbackWidth: 200)
+                                        else if (p is BooleanPropertyData)
                                           BooleanCatalogEntryProperty(
                                             p,
                                             value: itemController.propertyValues[p.name],
@@ -252,7 +263,11 @@ class _CatalogItemViewState extends State<CatalogItemView> {
                           ),
                         ),
                       if (showWidgetOptions) VerticalDivider(),
-                      Expanded(child: WidgetTreeExplorer(child: widget.item.widgetBuilder!.call(itemController))),
+                      Expanded(
+                        child: WidgetTreeExplorer(
+                          child: widget.item.widgetBuilder!.call(itemController),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -264,6 +279,57 @@ class _CatalogItemViewState extends State<CatalogItemView> {
       ),
     ),
   );
+}
+
+class MultipleObjectChoiceEntryProperty<T> extends StatelessWidget {
+  const MultipleObjectChoiceEntryProperty(this.data, {super.key, required this.value, required this.setNullStatus, this.valueToString});
+
+  final MultipleObjectTypeChoice data;
+  final T value;
+  final String? Function(T value)? valueToString;
+
+  final void Function(bool isNowNull) setNullStatus;
+
+  @override
+  Widget build(BuildContext context) => LimitedBox(
+    maxHeight: 600,
+    child: Card(
+      clipBehavior: .hardEdge,
+      child: DefaultTabController(
+        length: data.choices.length + (data.nullAllowed ? 1 : 0),
+        child: Column(
+          children: [
+            TabBar(
+              isScrollable: true,
+              tabs: [
+                if (data.nullAllowed) Tab(text: 'null'),
+                for (var c in data.choices) Tab(text: c.name),
+              ],
+            ),
+            Expanded(
+              child: TabBarView(
+                children: [
+                  if (data.nullAllowed) SizedBox.shrink(),
+                  for (var e in data.choices)
+                    // TODO complete this with the rendering of properties
+                    Placeholder(
+                      fallbackHeight: 200,
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+
+  // ListTile(
+  //   leading: (data.nullAllowed) ? Checkbox(value: value != null, onChanged: (value) => setNullStatus(!value!)) : Tooltip(message: 'This property cannot be set to null', child: Checkbox(value: null, onChanged: null, tristate: true)),
+  //   title: Text(data.name),
+  //   subtitle: Text(valueToString?.call(value) ?? value.toString()),
+  //   trailing: child,
+  // );
 }
 
 class CatalogEntryProperty<T> extends StatelessWidget {

@@ -37,18 +37,15 @@ class CatalogEntryController extends ChangeNotifier {
 
   /// ThemeData used around the widget view.
   ThemeData? _data;
-  // Map<String, dynamic> widgetProperties;
-  // Map<String, dynamic> selectedWidgetProperties;
 
   CatalogEntryController({
     this.propertyData = const [],
   }) {
     propertyValues = {};
     for (var p in propertyData) {
-      if (p is BooleanPropertyData) {
-        propertyValues[p.name] = p.defaultValue;
-      }
+      propertyValues[p.name] = p.defaultValue;
     }
+    print(propertyValues);
   }
 
   void setValue(String name, dynamic value) {
@@ -59,37 +56,47 @@ class CatalogEntryController extends ChangeNotifier {
 }
 
 /// Defines the characteristics of a property: authorized values, range, how to display it...
-abstract class CatalogPropertyData {
+abstract class CatalogPropertyData<T> {
   final String name;
   final Type type;
   final bool nullAllowed;
 
-  CatalogPropertyData(this.name, {required this.type, required this.nullAllowed});
+  final T? defaultValue;
+
+  CatalogPropertyData(this.name, {required this.type, required this.nullAllowed, this.defaultValue});
 }
 
-class NumRangePropertyData extends CatalogPropertyData {
-  NumRangePropertyData(super.name, {Type? type, super.nullAllowed = false, this.maximum, this.minimum, this.defaultValue, this.defaultValueWhenNotNull, this.integersOnly = false}) : super(type: type ?? num);
+class NumRangePropertyData extends CatalogPropertyData<num> {
+  NumRangePropertyData(super.name, {Type? type, super.nullAllowed = false, this.maximum, this.minimum, super.defaultValue, this.defaultValueWhenNotNull, this.integersOnly = false}) : super(type: type ?? num);
 
-  final num? minimum, maximum, defaultValue, defaultValueWhenNotNull;
+  final num? minimum, maximum, defaultValueWhenNotNull;
   final bool integersOnly;
 }
 
-class BooleanPropertyData extends CatalogPropertyData {
-  BooleanPropertyData(super.name, {this.defaultValue, super.nullAllowed = false}) : super(type: bool);
-
-  final bool? defaultValue;
+class BooleanPropertyData extends CatalogPropertyData<bool> {
+  BooleanPropertyData(super.name, {super.defaultValue, super.nullAllowed = false}) : super(type: bool);
 }
 
-class EnumPropertyData<T extends Object> extends CatalogPropertyData {
-  EnumPropertyData(super.name, {this.defaultValue, super.nullAllowed = false, required this.choices}) : super(type: T);
+class EnumPropertyData<T extends Object> extends CatalogPropertyData<T> {
+  EnumPropertyData(super.name, {super.defaultValue, super.nullAllowed = false, required this.choices}) : super(type: T);
 
-  final T? defaultValue;
   final List<T> choices;
 }
 
-class ColorPropertyData extends CatalogPropertyData {
-  ColorPropertyData(super.name, {this.defaultValue, super.nullAllowed = false, this.choices}) : super(type: Color);
+class ColorPropertyData extends CatalogPropertyData<Color> {
+  ColorPropertyData(super.name, {super.defaultValue, super.nullAllowed = false, this.choices}) : super(type: Color);
 
-  final Color? defaultValue;
   final List<Color>? choices;
+}
+
+class MultipleObjectTypeChoice<T> extends CatalogPropertyData<T> {
+  MultipleObjectTypeChoice(super.name, {required super.nullAllowed, required this.choices}) : super(type: T);
+
+  final List<CatalogPropertyData> choices;
+}
+
+class ObjectPropertyData<T> extends CatalogPropertyData<T> {
+  ObjectPropertyData(super.name, {required super.type, super.defaultValue, super.nullAllowed = false, required this.properties});
+
+  final List<CatalogPropertyData> properties;
 }

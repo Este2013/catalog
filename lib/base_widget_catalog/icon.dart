@@ -17,7 +17,7 @@ CatalogEntry iconCatalogEntry = CatalogEntry(
   ),
   defaultParameters: [
     EnumPropertyData('icon', choices: [Symbols.star, Symbols.abc, Symbols.settings, Symbols.pause_circle]),
-    // BooleanPropertyData('isFilled', nullAllowed: false, defaultValue: false)
+
     ColorPropertyData('color', nullAllowed: true),
     NumRangePropertyData('fill', type: double, defaultValue: null, minimum: 0, maximum: 1, nullAllowed: true),
     NumRangePropertyData('size', type: double, defaultValue: null, minimum: 1, maximum: 100, nullAllowed: true, integersOnly: true, defaultValueWhenNotNull: 24),

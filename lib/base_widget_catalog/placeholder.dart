@@ -13,8 +13,20 @@ CatalogEntry placeholderCatalogEntry = CatalogEntry(
     width: 24,
     colorFilter: ColorFilter.mode(iconColor ?? Theme.of(context).listTileTheme.iconColor ?? Theme.of(context).iconTheme.color!, .srcIn),
   ),
-  widgetBuilder: (controller) => Placeholder(),
+  widgetBuilder: (controller) => Placeholder(
+    color: controller.propertyValues['color'] ?? const Color(0xFF455A64),
+    fallbackHeight: controller.propertyValues['fallbackHeight'] ?? 400,
+    fallbackWidth: controller.propertyValues['fallbackWidth'] ?? 400,
+    strokeWidth: controller.propertyValues['strokeWidth'] ?? 2,
+    child: (controller.propertyValues['Provide a child'] ?? false) ? Icon(Icons.emoji_symbols, size: 100) : null,
+  ),
   defaultParameters: [
-    // TODO
+    ColorPropertyData('color', nullAllowed: true, defaultValue: const Color(0xFF455A64)),
+
+    NumRangePropertyData('fallbackHeight', type: double, defaultValue: null, minimum: 1, maximum: 1000, nullAllowed: true, integersOnly: true, defaultValueWhenNotNull: 400),
+    NumRangePropertyData('fallbackWidth', type: double, defaultValue: null, minimum: 1, maximum: 1000, nullAllowed: true, integersOnly: true, defaultValueWhenNotNull: 400),
+    NumRangePropertyData('strokeWidth', type: double, defaultValue: null, minimum: 1, maximum: 10, nullAllowed: true, integersOnly: true, defaultValueWhenNotNull: 2),
+
+    BooleanPropertyData('Provide a child', nullAllowed: false, defaultValue: false),
   ],
 );
