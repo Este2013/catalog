@@ -217,46 +217,7 @@ class _CatalogItemViewState extends State<CatalogItemView> {
                               ),
                               Expanded(
                                 child: SingleChildScrollView(
-                                  child: Column(
-                                    children: [
-                                      for (var p in widget.item.defaultParameters)
-                                        if (p is MultipleObjectTypeChoice)
-                                          MultipleObjectChoiceEntryProperty(
-                                            p,
-                                            value: itemController.propertyValues[p.name],
-                                            setNullStatus: (bool b) => itemController.setValue(p.name, null),
-                                            // editValue: (newValue) => itemController.setValue(p.name, newValue),
-                                          )
-                                        else if (p is ObjectPropertyData)
-                                          Placeholder(fallbackHeight: 200, fallbackWidth: 200)
-                                        else if (p is BooleanPropertyData)
-                                          BooleanCatalogEntryProperty(
-                                            p,
-                                            value: itemController.propertyValues[p.name],
-                                            editValue: (newValue) => itemController.setValue(p.name, newValue),
-                                          )
-                                        else if (p is NumRangePropertyData)
-                                          NumRangeEntryProperty(
-                                            p,
-                                            value: itemController.propertyValues[p.name],
-                                            editValue: (newValue) => itemController.setValue(p.name, newValue),
-                                          )
-                                        else if (p is EnumPropertyData)
-                                          EnumEntryProperty(
-                                            p,
-                                            value: itemController.propertyValues[p.name],
-                                            editValue: (newValue) => itemController.setValue(p.name, newValue),
-                                          )
-                                        else if (p is ColorPropertyData)
-                                          ColorEntryProperty(
-                                            p,
-                                            value: itemController.propertyValues[p.name],
-                                            editValue: (newValue) => itemController.setValue(p.name, newValue),
-                                          )
-                                        else
-                                          throw UnimplementedError(),
-                                    ],
-                                  ),
+                                  child: PropertyListBuilder(widget: widget, itemController: itemController),
                                 ),
                               ),
                             ],
@@ -265,7 +226,7 @@ class _CatalogItemViewState extends State<CatalogItemView> {
                       if (showWidgetOptions) VerticalDivider(),
                       Expanded(
                         child: WidgetTreeExplorer(
-                          child: widget.item.widgetBuilder!.call(itemController),
+                          child: widget.item.widgetBuilder!.call(itemController, itemController.evaluateVariables()),
                         ),
                       ),
                     ],
@@ -281,55 +242,160 @@ class _CatalogItemViewState extends State<CatalogItemView> {
   );
 }
 
-class MultipleObjectChoiceEntryProperty<T> extends StatelessWidget {
-  const MultipleObjectChoiceEntryProperty(this.data, {super.key, required this.value, required this.setNullStatus, this.valueToString});
+class PropertyListBuilder extends StatelessWidget {
+  const PropertyListBuilder({
+    super.key,
+    required this.widget,
+    required this.itemController,
+  });
+
+  final CatalogItemView widget;
+  final CatalogEntryController itemController;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [for (var property in itemController.propertyRenderers) PropertyEntryRenderer(property)],
+    );
+  }
+}
+
+class PropertyEntryRenderer extends StatelessWidget {
+  const PropertyEntryRenderer(this.propertyRenderer, {super.key});
+
+  final CatalogPropertyRenderer propertyRenderer;
+  CatalogPropertyData get property => propertyRenderer.data;
+  // final CatalogEntryController itemController;
+  // final List<String> basePath ;
+
+  @override
+  Widget build(BuildContext context) {
+    if (property is MultipleObjectTypeChoice) {
+      return MultipleObjectChoiceEntryProperty(
+        property as MultipleObjectTypeChoice,
+        propertyRenderer: propertyRenderer,
+        // value: propertyRenderer.isNull ? null : propertyRenderer.value,
+        // setNullStatus: (bool b) => propertyRenderer.isNull = b,
+      );
+    } else if (property is ObjectPropertyData) {
+      return Placeholder(fallbackHeight: 200, fallbackWidth: 200);
+    } else if (property is BooleanPropertyData) {
+      return BooleanCatalogEntryProperty(
+        property as BooleanPropertyData,
+        value: propertyRenderer.isNull ? null : propertyRenderer.value,
+        editValue: (newValue) {
+          if (newValue == null) {
+            propertyRenderer.isNull = true;
+            return null;
+          } else {
+            return propertyRenderer.value = newValue;
+          }
+        },
+      );
+    } else if (property is NumRangePropertyData) {
+      return NumRangeEntryProperty(
+        property as NumRangePropertyData,
+        value: propertyRenderer.isNull ? null : propertyRenderer.value,
+        editValue: (newValue) {
+          if (newValue == null) {
+            propertyRenderer.isNull = true;
+            return null;
+          } else {
+            return propertyRenderer.value = newValue;
+          }
+        },
+      );
+    } else if (property is EnumPropertyData) {
+      return EnumEntryProperty(
+        property as EnumPropertyData,
+        value: propertyRenderer.isNull ? null : propertyRenderer.value,
+        editValue: (newValue) {
+          if (newValue == null) {
+            propertyRenderer.isNull = true;
+            return null;
+          } else {
+            return propertyRenderer.value = newValue;
+          }
+        },
+      );
+    } else if (property is ColorPropertyData) {
+      return ColorEntryProperty(
+        property as ColorPropertyData,
+        value: propertyRenderer.isNull ? null : propertyRenderer.value,
+        editValue: (newValue) {
+          if (newValue == null) {
+            propertyRenderer.isNull = true;
+            return null;
+          } else {
+            return propertyRenderer.value = newValue;
+          }
+        },
+      );
+    } else {
+      throw UnimplementedError();
+    }
+  }
+}
+
+class MultipleObjectChoiceEntryProperty<T> extends StatefulWidget {
+  const MultipleObjectChoiceEntryProperty(this.data, {super.key, required this.propertyRenderer, /*required this.setNullStatus,*/ this.valueToString});
 
   final MultipleObjectTypeChoice data;
-  final T value;
+  // final T value;
+  final CatalogPropertyRenderer propertyRenderer;
   final String? Function(T value)? valueToString;
 
-  final void Function(bool isNowNull) setNullStatus;
+  @override
+  State<MultipleObjectChoiceEntryProperty<T>> createState() => _MultipleObjectChoiceEntryPropertyState<T>();
+}
+
+class _MultipleObjectChoiceEntryPropertyState<T> extends State<MultipleObjectChoiceEntryProperty<T>> with TickerProviderStateMixin {
+  // final void Function(bool isNowNull) setNullStatus;
+
+  late TabController tabController;
+  @override
+  void initState() {
+    tabController = TabController(length: widget.data.choices.length + (widget.data.nullAllowed ? 1 : 0), vsync: this);
+    tabController.addListener(
+      () {
+        if (tabController.index == 0 && widget.data.nullAllowed) {
+          widget.propertyRenderer.isNull = true;
+        } else {
+          widget.propertyRenderer.value = widget.data.choices[tabController.index - (widget.data.nullAllowed ? 1 : 0)].name;
+        }
+      },
+    );
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) => LimitedBox(
     maxHeight: 600,
     child: Card(
       clipBehavior: .hardEdge,
-      child: DefaultTabController(
-        length: data.choices.length + (data.nullAllowed ? 1 : 0),
-        child: Column(
-          children: [
-            TabBar(
-              isScrollable: true,
-              tabs: [
-                if (data.nullAllowed) Tab(text: 'null'),
-                for (var c in data.choices) Tab(text: c.name),
+      child: Column(
+        children: [
+          TabBar(
+            controller: tabController,
+            isScrollable: true,
+            tabs: [
+              if (widget.data.nullAllowed) Tab(text: 'null'),
+              for (var c in widget.data.choices) Tab(text: c.name),
+            ],
+          ),
+          Expanded(
+            child: TabBarView(
+              controller: tabController,
+              children: [
+                if (widget.data.nullAllowed) SizedBox.shrink(),
+                for (var e in widget.data.choices) Placeholder(), // TODO ObjectCatalogEntryProperty(e.name, type: e.type, properties:e.)
               ],
             ),
-            Expanded(
-              child: TabBarView(
-                children: [
-                  if (data.nullAllowed) SizedBox.shrink(),
-                  for (var e in data.choices)
-                    // TODO complete this with the rendering of properties
-                    Placeholder(
-                      fallbackHeight: 200,
-                    ),
-                ],
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     ),
   );
-
-  // ListTile(
-  //   leading: (data.nullAllowed) ? Checkbox(value: value != null, onChanged: (value) => setNullStatus(!value!)) : Tooltip(message: 'This property cannot be set to null', child: Checkbox(value: null, onChanged: null, tristate: true)),
-  //   title: Text(data.name),
-  //   subtitle: Text(valueToString?.call(value) ?? value.toString()),
-  //   trailing: child,
-  // );
 }
 
 class CatalogEntryProperty<T> extends StatelessWidget {
@@ -347,6 +413,23 @@ class CatalogEntryProperty<T> extends StatelessWidget {
     title: Text(data.name),
     subtitle: Text(valueToString?.call(value) ?? value.toString()),
     trailing: child,
+  );
+}
+
+class ObjectCatalogEntryProperty<T> extends StatelessWidget {
+  const ObjectCatalogEntryProperty(this.data, {super.key, required this.value, required this.editValue});
+
+  final BooleanPropertyData data;
+
+  final bool? value;
+  final Function(bool? newValue) editValue;
+
+  @override
+  Widget build(BuildContext context) => CatalogEntryProperty<bool?>(
+    data,
+    value: value,
+    child: Switch(value: value ?? false, onChanged: editValue),
+    setNullStatus: (isNowNull) => editValue(isNowNull ? null : data.defaultValue ?? false),
   );
 }
 

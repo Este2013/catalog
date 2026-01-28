@@ -6,9 +6,9 @@ CatalogEntry opacityCatalogEntry = CatalogEntry(
   'Opacity',
   docLink: 'https://api.flutter.dev/flutter/widgets/Opacity-class.html',
   icon: Icon(Symbols.opacity),
-  widgetBuilder: (controller) => Opacity(
-    opacity: controller.propertyValues['opacity'],
-    alwaysIncludeSemantics: controller.propertyValues['alwaysIncludeSemantics'],
+  widgetBuilder: (controller, variables) => Opacity(
+    opacity: variables['opacity'],
+    alwaysIncludeSemantics: variables['alwaysIncludeSemantics'],
     child: Text(
       'This text is a child widget of Opacity.',
       semanticsLabel: 'Some semantics label',

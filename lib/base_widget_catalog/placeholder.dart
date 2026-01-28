@@ -13,12 +13,12 @@ CatalogEntry placeholderCatalogEntry = CatalogEntry(
     width: 24,
     colorFilter: ColorFilter.mode(iconColor ?? Theme.of(context).listTileTheme.iconColor ?? Theme.of(context).iconTheme.color!, .srcIn),
   ),
-  widgetBuilder: (controller) => Placeholder(
-    color: controller.propertyValues['color'] ?? const Color(0xFF455A64),
-    fallbackHeight: controller.propertyValues['fallbackHeight'] ?? 400,
-    fallbackWidth: controller.propertyValues['fallbackWidth'] ?? 400,
-    strokeWidth: controller.propertyValues['strokeWidth'] ?? 2,
-    child: (controller.propertyValues['Provide a child'] ?? false) ? Icon(Icons.emoji_symbols, size: 100) : null,
+  widgetBuilder: (controller, variables) => Placeholder(
+    color: variables['color'] ?? const Color(0xFF455A64),
+    fallbackHeight: variables['fallbackHeight'] ?? 400,
+    fallbackWidth: variables['fallbackWidth'] ?? 400,
+    strokeWidth: variables['strokeWidth'] ?? 2,
+    child: (variables['Provide a child'] ?? false) ? Icon(Icons.emoji_symbols, size: 100) : null,
   ),
   defaultParameters: [
     ColorPropertyData('color', nullAllowed: true, defaultValue: const Color(0xFF455A64)),

@@ -6,7 +6,7 @@ CatalogEntry shaderMaskCatalogEntry = CatalogEntry(
   'ShaderMask',
   docLink: 'https://api.flutter.dev/flutter/widgets/ShaderMask-class.html',
   icon: Icon(Symbols.shadow_rounded),
-  widgetBuilder: (controller) => ShaderMask(
+  widgetBuilder: (controller, variables) => ShaderMask(
     blendMode: BlendMode.modulate,
     shaderCallback: (bounds) {
       return RadialGradient(

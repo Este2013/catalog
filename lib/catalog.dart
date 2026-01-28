@@ -16,7 +16,7 @@ class CatalogEntry {
   Widget? icon;
 
   Widget Function(BuildContext context, Color? iconColor)? iconBuilder;
-  Widget Function(CatalogEntryController controller)? widgetBuilder;
+  Widget Function(CatalogEntryController controller, Map<String, dynamic> evaluatedVariables)? widgetBuilder;
 
   List<CatalogPropertyData> defaultParameters;
 
@@ -33,7 +33,7 @@ class CatalogEntryController extends ChangeNotifier {
 
   /// Data concerning the properties passed programatically to the widget.
   List<CatalogPropertyData> propertyData;
-  late Map<String, dynamic> propertyValues;
+  late List<CatalogPropertyRenderer> propertyRenderers;
 
   /// ThemeData used around the widget view.
   ThemeData? _data;
@@ -41,18 +41,28 @@ class CatalogEntryController extends ChangeNotifier {
   CatalogEntryController({
     this.propertyData = const [],
   }) {
-    propertyValues = {};
-    for (var p in propertyData) {
-      propertyValues[p.name] = p.defaultValue;
-    }
-    print(propertyValues);
+    propertyRenderers = [for (var p in propertyData) CatalogPropertyRenderer(p)..addListener(() => notifyListeners())];
+    // propertyValues = {};
+    // for (var p in propertyData) {
+    //   propertyValues[p.name] = p.defaultValue;
+    // }
+    // print(propertyValues);
   }
 
-  void setValue(String name, dynamic value) {
-    if (propertyValues[name] == value) return;
-    propertyValues[name] = value;
-    notifyListeners();
+  Map<String, dynamic> evaluateVariables() {
+    return Map.fromEntries([for (var p in propertyRenderers) MapEntry(p.data.name, p.evaluated())]);
   }
+
+  // void setValue(String name, dynamic value, {List<String> path = const []}) {
+  //   Map map = propertyValues;
+  //   for (var v in path) {
+  //     if (map[v] == null) {}
+  //     map = propertyValues[v];
+  //   }
+  //   if (propertyValues[name] == value) return;
+  //   propertyValues[name] = value;
+  //   notifyListeners();
+  // }
 }
 
 /// Defines the characteristics of a property: authorized values, range, how to display it...
@@ -64,6 +74,58 @@ abstract class CatalogPropertyData<T> {
   final T? defaultValue;
 
   CatalogPropertyData(this.name, {required this.type, required this.nullAllowed, this.defaultValue});
+}
+
+/// Makes the link between the CatalogPropertyData and its held value.
+class CatalogPropertyRenderer<V, T extends CatalogPropertyData<V>> extends ChangeNotifier {
+  final T data;
+  late List<CatalogPropertyRenderer> children;
+
+  late bool _isNull;
+  bool get isNull => _isNull;
+  set isNull(bool state) {
+    _isNull = state;
+    notifyListeners();
+  }
+
+  V? _value;
+  V? get value => _value;
+  set value(V? newValue) {
+    if (newValue == null && !data.nullAllowed) {
+      return;
+    }
+    if (newValue == null) {
+      _isNull = true;
+    } else {
+      _isNull = false;
+      _value = newValue;
+    }
+    notifyListeners();
+  }
+
+  CatalogPropertyRenderer(this.data) {
+    _isNull = data.defaultValue == null;
+    _value = data.defaultValue;
+
+    if (data is ObjectPropertyData) {
+      children = [for (var p in (data as ObjectPropertyData).properties) CatalogPropertyRenderer(p)..addListener(notifyListeners)];
+    } else if (data is MultipleObjectTypeChoice) {
+      children = [for (var p in (data as MultipleObjectTypeChoice).choices) CatalogPropertyRenderer(p)..addListener(notifyListeners)];
+    } else {
+      children = [];
+    }
+  }
+
+  dynamic evaluated() {
+    if (_isNull) return null;
+    if (data is ObjectPropertyData) {
+      return {for (var p in children) p.data.name: p.evaluated()};
+    } else if (data is MultipleObjectTypeChoice) {
+      return children.firstWhere((c) => c.data.name == value).evaluated();
+    } else {
+      return value;
+    }
+  }
 }
 
 class NumRangePropertyData extends CatalogPropertyData<num> {
@@ -89,13 +151,13 @@ class ColorPropertyData extends CatalogPropertyData<Color> {
   final List<Color>? choices;
 }
 
-class MultipleObjectTypeChoice<T> extends CatalogPropertyData<T> {
-  MultipleObjectTypeChoice(super.name, {required super.nullAllowed, required this.choices}) : super(type: T);
+class MultipleObjectTypeChoice extends CatalogPropertyData<String> {
+  MultipleObjectTypeChoice(super.name, {required super.nullAllowed, required this.choices}) : super(type: String);
 
   final List<CatalogPropertyData> choices;
 }
 
-class ObjectPropertyData<T> extends CatalogPropertyData<T> {
+class ObjectPropertyData extends CatalogPropertyData<Null> {
   ObjectPropertyData(super.name, {required super.type, super.defaultValue, super.nullAllowed = false, required this.properties});
 
   final List<CatalogPropertyData> properties;

@@ -6,14 +6,14 @@ CatalogEntry iconCatalogEntry = CatalogEntry(
   'Icon',
   docLink: 'https://api.flutter.dev/flutter/widgets/Icon-class.html',
   icon: Icon(Symbols.emoji_symbols),
-  widgetBuilder: (controller) => Icon(
-    controller.propertyValues['icon'] ?? Symbols.star,
-    color: controller.propertyValues['color'],
-    fill: controller.propertyValues['fill'],
-    size: controller.propertyValues['size'],
-    opticalSize: controller.propertyValues['opticalSize'],
-    weight: controller.propertyValues['weight'],
-    grade: controller.propertyValues['grade'],
+  widgetBuilder: (controller, variables) => Icon(
+    variables['icon'] ?? Symbols.star,
+    color: variables['color'],
+    fill: variables['fill'],
+    size: variables['size'],
+    opticalSize: variables['opticalSize'],
+    weight: variables['weight'],
+    grade: variables['grade'],
   ),
   defaultParameters: [
     EnumPropertyData('icon', choices: [Symbols.star, Symbols.abc, Symbols.settings, Symbols.pause_circle]),
