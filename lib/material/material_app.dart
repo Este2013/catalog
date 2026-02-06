@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:catalog/base_widget_catalog/widget_catalog.dart';
 import 'package:catalog/catalog.dart';
 import 'package:catalog/docs_display.dart';
@@ -225,8 +227,38 @@ class _CatalogItemViewState extends State<CatalogItemView> {
                         ),
                       if (showWidgetOptions) VerticalDivider(),
                       Expanded(
-                        child: WidgetTreeExplorer(
-                          child: widget.item.widgetBuilder!.call(itemController, itemController.evaluateVariables()),
+                        child: ClipRect(
+                          child: Scaffold(
+                            drawer: Drawer(
+                              width: 500,
+                              child: Padding(
+                                padding: const EdgeInsets.all(12),
+                                child: SingleChildScrollView(
+                                  child: SelectableText(
+                                    JsonEncoder.withIndent(
+                                      '   ',
+                                      (o) {
+                                        if (o is Alignment) return 'Alignment(${o.x}, ${o.y})';
+                                        if (o is Color) return o.toHexString();
+                                        if (o is IconData) return 'IconData(U+${o.codePoint.toRadixString(16).toUpperCase()})';
+                                        return o.toJson();
+                                      },
+                                    ).convert(itemController.evaluateVariables()),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            floatingActionButtonLocation: .startFloat,
+                            floatingActionButton: Builder(
+                              builder: (context) => FloatingActionButton(
+                                onPressed: Scaffold.of(context).openDrawer,
+                                child: Icon(Symbols.data_object),
+                              ),
+                            ),
+                            body: WidgetTreeExplorer(
+                              child: widget.item.widgetBuilder!.call(itemController, itemController.evaluateVariables()),
+                            ),
+                          ),
                         ),
                       ),
                     ],
@@ -263,10 +295,8 @@ class PropertyListBuilder extends StatelessWidget {
 class PropertyEntryRenderer extends StatelessWidget {
   const PropertyEntryRenderer(this.propertyRenderer, {super.key});
 
-  final CatalogPropertyRenderer propertyRenderer;
+  final CatalogPropertyRenderObject propertyRenderer;
   CatalogPropertyData get property => propertyRenderer.data;
-  // final CatalogEntryController itemController;
-  // final List<String> basePath ;
 
   @override
   Widget build(BuildContext context) {
@@ -278,11 +308,16 @@ class PropertyEntryRenderer extends StatelessWidget {
         // setNullStatus: (bool b) => propertyRenderer.isNull = b,
       );
     } else if (property is ObjectPropertyData) {
-      return Placeholder(fallbackHeight: 200, fallbackWidth: 200);
+      return Column(
+        children: [
+          for (var r in propertyRenderer.children) PropertyEntryRenderer(r),
+        ],
+      );
     } else if (property is BooleanPropertyData) {
       return BooleanCatalogEntryProperty(
         property as BooleanPropertyData,
-        value: propertyRenderer.isNull ? null : propertyRenderer.value,
+        renderObject: propertyRenderer,
+        // value: propertyRenderer.isNull ? null : propertyRenderer.value,
         editValue: (newValue) {
           if (newValue == null) {
             propertyRenderer.isNull = true;
@@ -295,33 +330,27 @@ class PropertyEntryRenderer extends StatelessWidget {
     } else if (property is NumRangePropertyData) {
       return NumRangeEntryProperty(
         property as NumRangePropertyData,
-        value: propertyRenderer.isNull ? null : propertyRenderer.value,
-        editValue: (newValue) {
-          if (newValue == null) {
-            propertyRenderer.isNull = true;
-            return null;
-          } else {
-            return propertyRenderer.value = newValue;
-          }
-        },
+        renderObject: propertyRenderer,
+        // TODO refactor to give propertyRenderer and simplify the value editing code
+        // value: propertyRenderer.isNull ? null : propertyRenderer.value,
+        // editValue: (newValue) {
+        //   if (newValue == null) {
+        //     propertyRenderer.isNull = true;
+        //     return null;
+        //   } else {
+        //     return propertyRenderer.value = newValue;
+        //   }
+        // },
       );
     } else if (property is EnumPropertyData) {
       return EnumEntryProperty(
         property as EnumPropertyData,
-        value: propertyRenderer.isNull ? null : propertyRenderer.value,
-        editValue: (newValue) {
-          if (newValue == null) {
-            propertyRenderer.isNull = true;
-            return null;
-          } else {
-            return propertyRenderer.value = newValue;
-          }
-        },
+        renderObject: propertyRenderer,
       );
     } else if (property is ColorPropertyData) {
       return ColorEntryProperty(
         property as ColorPropertyData,
-        value: propertyRenderer.isNull ? null : propertyRenderer.value,
+        renderObject: propertyRenderer,
         editValue: (newValue) {
           if (newValue == null) {
             propertyRenderer.isNull = true;
@@ -342,7 +371,7 @@ class MultipleObjectChoiceEntryProperty<T> extends StatefulWidget {
 
   final MultipleObjectTypeChoice data;
   // final T value;
-  final CatalogPropertyRenderer propertyRenderer;
+  final CatalogPropertyRenderObject propertyRenderer;
   final String? Function(T value)? valueToString;
 
   @override
@@ -350,52 +379,74 @@ class MultipleObjectChoiceEntryProperty<T> extends StatefulWidget {
 }
 
 class _MultipleObjectChoiceEntryPropertyState<T> extends State<MultipleObjectChoiceEntryProperty<T>> with TickerProviderStateMixin {
-  // final void Function(bool isNowNull) setNullStatus;
+  // TODO render the property name somehow
+  // late TabController tabController;
+  // @override
+  // void initState() {
+  //   tabController = TabController(length: widget.data.choices.length + (widget.data.nullAllowed ? 1 : 0), vsync: this);
+  //   tabController.addListener(
+  //     () {
+  //       if (tabController.index == 0 && widget.data.nullAllowed) {
+  //         widget.propertyRenderer.isNull = true;
+  //       } else {
+  //         widget.propertyRenderer.value = widget.data.choices[tabController.index - (widget.data.nullAllowed ? 1 : 0)].name;
+  //       }
+  //     },
+  //   );
+  //   super.initState();
+  // }
 
-  late TabController tabController;
   @override
-  void initState() {
-    tabController = TabController(length: widget.data.choices.length + (widget.data.nullAllowed ? 1 : 0), vsync: this);
-    tabController.addListener(
-      () {
-        if (tabController.index == 0 && widget.data.nullAllowed) {
-          widget.propertyRenderer.isNull = true;
-        } else {
-          widget.propertyRenderer.value = widget.data.choices[tabController.index - (widget.data.nullAllowed ? 1 : 0)].name;
-        }
-      },
-    );
-    super.initState();
-  }
+  Widget build(BuildContext context) {
+    return LimitedBox(
+      maxHeight: 600,
+      child: Card(
+        clipBehavior: .hardEdge,
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Column(
+            mainAxisSize: .min,
+            children: [
+              Row(
+                children: [
+                  Text(widget.data.name, style: Theme.of(context).textTheme.bodyLarge),
+                  Spacer(),
+                  DropdownMenu<String>(
+                    dropdownMenuEntries: [
+                      if (widget.data.nullAllowed) DropdownMenuEntry(value: '', label: 'null'),
+                      for (var c in widget.data.choices) DropdownMenuEntry(value: c.name, label: c.name),
+                    ],
+                    onSelected: (value) {
+                      if (value == null) widget.propertyRenderer.value = null;
+                      widget.propertyRenderer.value = value;
+                    },
+                    initialSelection: widget.propertyRenderer.value ?? '',
+                  ),
+                ],
+              ),
 
-  @override
-  Widget build(BuildContext context) => LimitedBox(
-    maxHeight: 600,
-    child: Card(
-      clipBehavior: .hardEdge,
-      child: Column(
-        children: [
-          TabBar(
-            controller: tabController,
-            isScrollable: true,
-            tabs: [
-              if (widget.data.nullAllowed) Tab(text: 'null'),
-              for (var c in widget.data.choices) Tab(text: c.name),
+              if (widget.propertyRenderer.value == null)
+                SizedBox.shrink()
+              else ...[
+                if (widget.propertyRenderer.children
+                    .firstWhere(
+                      (e) => e.data.name == widget.propertyRenderer.value,
+                    )
+                    .children
+                    .isNotEmpty)
+                  Divider(),
+                PropertyEntryRenderer(
+                  widget.propertyRenderer.children.firstWhere(
+                    (e) => e.data.name == widget.propertyRenderer.value,
+                  ),
+                ),
+              ],
             ],
           ),
-          Expanded(
-            child: TabBarView(
-              controller: tabController,
-              children: [
-                if (widget.data.nullAllowed) SizedBox.shrink(),
-                for (var e in widget.data.choices) Placeholder(), // TODO ObjectCatalogEntryProperty(e.name, type: e.type, properties:e.)
-              ],
-            ),
-          ),
-        ],
+        ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 class CatalogEntryProperty<T> extends StatelessWidget {
@@ -434,10 +485,13 @@ class ObjectCatalogEntryProperty<T> extends StatelessWidget {
 }
 
 class BooleanCatalogEntryProperty extends StatelessWidget {
-  const BooleanCatalogEntryProperty(this.data, {super.key, required this.value, required this.editValue});
+  const BooleanCatalogEntryProperty(this.data, {super.key, required this.renderObject, required this.editValue});
 
   final BooleanPropertyData data;
-  final bool? value;
+
+  final CatalogPropertyRenderObject renderObject;
+
+  bool? get value => renderObject.isNull ? null : renderObject.value;
 
   final Function(bool? newValue) editValue;
 
@@ -446,17 +500,20 @@ class BooleanCatalogEntryProperty extends StatelessWidget {
     data,
     value: value,
     child: Switch(value: value ?? false, onChanged: editValue),
-    setNullStatus: (isNowNull) => editValue(isNowNull ? null : data.defaultValue ?? false),
+    setNullStatus: (isNowNull) {
+      renderObject.isNull = isNowNull;
+    },
   );
 }
 
 class NumRangeEntryProperty extends StatelessWidget {
-  const NumRangeEntryProperty(this.data, {super.key, required this.value, required this.editValue});
+  const NumRangeEntryProperty(this.data, {super.key, required this.renderObject /* required this.value, required this.editValue */});
 
   final NumRangePropertyData data;
-  final num? value;
 
-  final Function(num? newValue) editValue;
+  final CatalogPropertyRenderObject renderObject;
+
+  num? get value => renderObject.isNull ? null : renderObject.value;
 
   @override
   Widget build(BuildContext context) => CatalogEntryProperty<num?>(
@@ -465,53 +522,64 @@ class NumRangeEntryProperty extends StatelessWidget {
     child: SizedBox(
       width: 150,
       child: Slider(
-        value: value?.toDouble() ?? data.minimum!.toDouble(),
-        onChanged: editValue,
-        min: data.minimum!.toDouble(),
-        max: data.maximum!.toDouble(),
-        divisions: data.integersOnly ? data.maximum!.round() - data.minimum!.round() : null,
+        value: value?.toDouble() ?? data.minimum.toDouble(),
+        onChanged: (newValue) => renderObject.value = newValue,
+        min: data.minimum.toDouble(),
+        max: data.maximum.toDouble(),
+        divisions: data.integersOnly ? data.maximum.round() - data.minimum.round() : null,
       ),
     ),
-    setNullStatus: (isNowNull) => editValue(isNowNull ? null : data.defaultValueWhenNotNull?.toDouble() ?? data.minimum!.toDouble()),
+    setNullStatus: (isNowNull) {
+      renderObject.isNull = isNowNull;
+      if (!isNowNull && value == null) {
+        renderObject.value = data.defaultValueWhenNotNull;
+      }
+    },
     valueToString: (value) => data.integersOnly ? value?.toInt().toString() : value?.toStringAsPrecision(3),
   );
 }
 
 class EnumEntryProperty<T extends Object> extends StatelessWidget {
-  const EnumEntryProperty(this.data, {super.key, required this.value, required this.editValue});
+  const EnumEntryProperty(this.data, {super.key, required this.renderObject});
 
   final EnumPropertyData<T> data;
-  final T? value;
 
-  final Function(T? newValue) editValue;
+  final CatalogPropertyRenderObject renderObject;
+
+  T? get value => renderObject.isNull ? null : renderObject.value;
 
   @override
   Widget build(BuildContext context) => CatalogEntryProperty<T?>(
     data,
     value: value,
+    valueToString: data.valueToString,
+    setNullStatus: (isNowNull) {
+      renderObject.isNull = isNowNull;
+    },
     child: SizedBox(
       width: 150,
       child: DropdownMenu(
-        initialSelection: data.choices.first,
-        onSelected: (value) => editValue(value),
+        initialSelection: renderObject.value ?? data.choices.first,
+        onSelected: (value) => renderObject.value = value,
         dropdownMenuEntries: [
           for (var v in data.choices)
             DropdownMenuEntry(
               value: v,
-              label: v.toString(),
+              label: data.valueToString?.call(v) ?? v.toString(),
             ),
         ],
       ),
     ),
-    setNullStatus: (isNowNull) => editValue(isNowNull ? null : data.choices.first),
   );
 }
 
 class ColorEntryProperty extends StatelessWidget {
-  const ColorEntryProperty(this.data, {super.key, required this.value, required this.editValue});
+  const ColorEntryProperty(this.data, {super.key, required this.renderObject, required this.editValue});
 
   final ColorPropertyData data;
-  final Color? value;
+  final CatalogPropertyRenderObject renderObject;
+
+  Color? get value => renderObject.isNull ? null : renderObject.value;
 
   final Function(Color? newValue) editValue;
 
@@ -539,7 +607,9 @@ class ColorEntryProperty extends StatelessWidget {
           ),
       ],
     ),
-    setNullStatus: (isNowNull) => editValue(isNowNull ? null : data.defaultValue),
+    setNullStatus: (isNowNull) {
+      renderObject.isNull = isNowNull;
+    },
     valueToString: (value) => value?.toHexString(),
   );
 }

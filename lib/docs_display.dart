@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:html/parser.dart' show parse;
 import 'package:http/http.dart' as http;
 import 'package:flutter_html/flutter_html.dart';
-import 'package:material_symbols_icons/symbols.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class DocsDisplayer extends StatelessWidget {
@@ -100,7 +99,7 @@ class _HtmlDisplay extends StatelessWidget {
         child: Html(
           data: display,
           // you can customize link tap behavior, styling, etc.
-          onLinkTap: (href, _, __) {
+          onLinkTap: (href, _, _) {
             if (href == null) return;
             if (!href.startsWith('https://api.flutter.dev/flutter/')) href = 'https://api.flutter.dev/flutter/$href';
             launchUrl(Uri.parse(href));

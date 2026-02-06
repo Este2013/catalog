@@ -61,6 +61,7 @@ class _WidgetTreeExplorerState extends State<WidgetTreeExplorer> {
         },
       ),
     ),
+
     floatingActionButton: Builder(
       builder: (context) {
         return FloatingActionButton(
@@ -141,7 +142,7 @@ class _DiagnosticsTreeViewState extends State<DiagnosticsTreeView> {
       data: Theme.of(context).copyWith(
         dividerColor: Colors.transparent,
       ),
-      child: _DiagnosticsNodeTile(node: widget.root, showNullValues: widget.showNullValues),
+      child: _DiagnosticsNodeTile(node: node, showNullValues: widget.showNullValues),
     );
   }
 }

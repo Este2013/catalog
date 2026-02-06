@@ -33,7 +33,7 @@ class CatalogEntryController extends ChangeNotifier {
 
   /// Data concerning the properties passed programatically to the widget.
   List<CatalogPropertyData> propertyData;
-  late List<CatalogPropertyRenderer> propertyRenderers;
+  late List<CatalogPropertyRenderObject> propertyRenderers;
 
   /// ThemeData used around the widget view.
   ThemeData? _data;
@@ -41,28 +41,14 @@ class CatalogEntryController extends ChangeNotifier {
   CatalogEntryController({
     this.propertyData = const [],
   }) {
-    propertyRenderers = [for (var p in propertyData) CatalogPropertyRenderer(p)..addListener(() => notifyListeners())];
-    // propertyValues = {};
-    // for (var p in propertyData) {
-    //   propertyValues[p.name] = p.defaultValue;
-    // }
-    // print(propertyValues);
+    propertyRenderers = [
+      for (var p in propertyData) CatalogPropertyRenderObject(p)..addListener(notifyListeners),
+    ];
   }
 
   Map<String, dynamic> evaluateVariables() {
     return Map.fromEntries([for (var p in propertyRenderers) MapEntry(p.data.name, p.evaluated())]);
   }
-
-  // void setValue(String name, dynamic value, {List<String> path = const []}) {
-  //   Map map = propertyValues;
-  //   for (var v in path) {
-  //     if (map[v] == null) {}
-  //     map = propertyValues[v];
-  //   }
-  //   if (propertyValues[name] == value) return;
-  //   propertyValues[name] = value;
-  //   notifyListeners();
-  // }
 }
 
 /// Defines the characteristics of a property: authorized values, range, how to display it...
@@ -72,14 +58,15 @@ abstract class CatalogPropertyData<T> {
   final bool nullAllowed;
 
   final T? defaultValue;
+  final T? defaultValueWhenNotNull;
 
-  CatalogPropertyData(this.name, {required this.type, required this.nullAllowed, this.defaultValue});
+  CatalogPropertyData(this.name, {required this.type, required this.nullAllowed, this.defaultValue, this.defaultValueWhenNotNull});
 }
 
 /// Makes the link between the CatalogPropertyData and its held value.
-class CatalogPropertyRenderer<V, T extends CatalogPropertyData<V>> extends ChangeNotifier {
+class CatalogPropertyRenderObject<V, T extends CatalogPropertyData<V>> extends ChangeNotifier {
   final T data;
-  late List<CatalogPropertyRenderer> children;
+  late List<CatalogPropertyRenderObject> children;
 
   late bool _isNull;
   bool get isNull => _isNull;
@@ -103,14 +90,25 @@ class CatalogPropertyRenderer<V, T extends CatalogPropertyData<V>> extends Chang
     notifyListeners();
   }
 
-  CatalogPropertyRenderer(this.data) {
-    _isNull = data.defaultValue == null;
-    _value = data.defaultValue;
+  CatalogPropertyRenderObject(this.data) {
+    _isNull = data.nullAllowed && data.defaultValue == null;
+    _value = data.defaultValue ?? data.defaultValueWhenNotNull;
 
-    if (data is ObjectPropertyData) {
-      children = [for (var p in (data as ObjectPropertyData).properties) CatalogPropertyRenderer(p)..addListener(notifyListeners)];
+    if (data is BooleanPropertyData && (!data.nullAllowed && _value == null)) {
+      _value = false as V;
+    } else if (data is ColorPropertyData && (!data.nullAllowed && _value == null)) {
+      _value = (data as ColorPropertyData).choices?.first as V;
+    } else if (data is EnumPropertyData && (!data.nullAllowed && _value == null)) {
+      _value = (data as EnumPropertyData).choices.first as V;
+    } else if (data is NumRangePropertyData && (!data.nullAllowed && _value == null)) {
+      _value = (data as NumRangePropertyData).minimum as V;
+    } else if (data is ObjectPropertyData) {
+      children = [for (var p in (data as ObjectPropertyData).properties) CatalogPropertyRenderObject(p)..addListener(notifyListeners)];
     } else if (data is MultipleObjectTypeChoice) {
-      children = [for (var p in (data as MultipleObjectTypeChoice).choices) CatalogPropertyRenderer(p)..addListener(notifyListeners)];
+      if (!data.nullAllowed && _value == null) {
+        _value = (data as MultipleObjectTypeChoice).choices.first.name as V;
+      }
+      children = [for (var p in (data as MultipleObjectTypeChoice).choices) CatalogPropertyRenderObject(p)..addListener(notifyListeners)];
     } else {
       children = [];
     }
@@ -118,10 +116,12 @@ class CatalogPropertyRenderer<V, T extends CatalogPropertyData<V>> extends Chang
 
   dynamic evaluated() {
     if (_isNull) return null;
+
     if (data is ObjectPropertyData) {
       return {for (var p in children) p.data.name: p.evaluated()};
     } else if (data is MultipleObjectTypeChoice) {
-      return children.firstWhere((c) => c.data.name == value).evaluated();
+      var selectedChild = children.firstWhere((c) => c.data.name == value);
+      return {selectedChild.data.name: selectedChild.evaluated()};
     } else {
       return value;
     }
@@ -129,20 +129,21 @@ class CatalogPropertyRenderer<V, T extends CatalogPropertyData<V>> extends Chang
 }
 
 class NumRangePropertyData extends CatalogPropertyData<num> {
-  NumRangePropertyData(super.name, {Type? type, super.nullAllowed = false, this.maximum, this.minimum, super.defaultValue, this.defaultValueWhenNotNull, this.integersOnly = false}) : super(type: type ?? num);
+  NumRangePropertyData(super.name, {Type? type, super.nullAllowed = false, required this.maximum, required this.minimum, super.defaultValue, super.defaultValueWhenNotNull, this.integersOnly = false}) : super(type: type ?? num);
 
-  final num? minimum, maximum, defaultValueWhenNotNull;
+  final num minimum, maximum;
   final bool integersOnly;
 }
 
 class BooleanPropertyData extends CatalogPropertyData<bool> {
-  BooleanPropertyData(super.name, {super.defaultValue, super.nullAllowed = false}) : super(type: bool);
+  BooleanPropertyData(super.name, {super.defaultValue, super.defaultValueWhenNotNull, super.nullAllowed = false}) : super(type: bool);
 }
 
 class EnumPropertyData<T extends Object> extends CatalogPropertyData<T> {
-  EnumPropertyData(super.name, {super.defaultValue, super.nullAllowed = false, required this.choices}) : super(type: T);
+  EnumPropertyData(super.name, {super.defaultValue, T? defaultValueWhenNotNull, super.nullAllowed = false, required this.choices, this.valueToString}) : super(type: T, defaultValueWhenNotNull: defaultValueWhenNotNull ?? choices.first);
 
   final List<T> choices;
+  final String Function(T? value)? valueToString;
 }
 
 class ColorPropertyData extends CatalogPropertyData<Color> {

@@ -15,9 +15,9 @@ CatalogEntry placeholderCatalogEntry = CatalogEntry(
   ),
   widgetBuilder: (controller, variables) => Placeholder(
     color: variables['color'] ?? const Color(0xFF455A64),
-    fallbackHeight: variables['fallbackHeight'] ?? 400,
-    fallbackWidth: variables['fallbackWidth'] ?? 400,
-    strokeWidth: variables['strokeWidth'] ?? 2,
+    fallbackHeight: (variables['fallbackHeight'] ?? 400.0).toDouble(),
+    fallbackWidth: (variables['fallbackWidth'] ?? 400.0).toDouble(),
+    strokeWidth: (variables['strokeWidth'] ?? 2.0).toDouble(),
     child: (variables['Provide a child'] ?? false) ? Icon(Icons.emoji_symbols, size: 100) : null,
   ),
   defaultParameters: [
