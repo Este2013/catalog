@@ -379,70 +379,51 @@ class MultipleObjectChoiceEntryProperty<T> extends StatefulWidget {
 }
 
 class _MultipleObjectChoiceEntryPropertyState<T> extends State<MultipleObjectChoiceEntryProperty<T>> with TickerProviderStateMixin {
-  // TODO render the property name somehow
-  // late TabController tabController;
-  // @override
-  // void initState() {
-  //   tabController = TabController(length: widget.data.choices.length + (widget.data.nullAllowed ? 1 : 0), vsync: this);
-  //   tabController.addListener(
-  //     () {
-  //       if (tabController.index == 0 && widget.data.nullAllowed) {
-  //         widget.propertyRenderer.isNull = true;
-  //       } else {
-  //         widget.propertyRenderer.value = widget.data.choices[tabController.index - (widget.data.nullAllowed ? 1 : 0)].name;
-  //       }
-  //     },
-  //   );
-  //   super.initState();
-  // }
-
   @override
   Widget build(BuildContext context) {
-    return LimitedBox(
-      maxHeight: 600,
-      child: Card(
-        clipBehavior: .hardEdge,
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Column(
-            mainAxisSize: .min,
-            children: [
-              Row(
-                children: [
-                  Text(widget.data.name, style: Theme.of(context).textTheme.bodyLarge),
-                  Spacer(),
-                  DropdownMenu<String>(
-                    dropdownMenuEntries: [
-                      if (widget.data.nullAllowed) DropdownMenuEntry(value: '', label: 'null'),
-                      for (var c in widget.data.choices) DropdownMenuEntry(value: c.name, label: c.name),
-                    ],
-                    onSelected: (value) {
-                      if (value == null) widget.propertyRenderer.value = null;
-                      widget.propertyRenderer.value = value;
-                    },
-                    initialSelection: widget.propertyRenderer.value ?? '',
-                  ),
-                ],
-              ),
-
-              if (widget.propertyRenderer.value == null)
-                SizedBox.shrink()
-              else ...[
-                if (widget.propertyRenderer.children
-                    .firstWhere(
-                      (e) => e.data.name == widget.propertyRenderer.value,
-                    )
-                    .children
-                    .isNotEmpty)
-                  Divider(),
-                PropertyEntryRenderer(
-                  widget.propertyRenderer.children.firstWhere(
-                    (e) => e.data.name == widget.propertyRenderer.value,
-                  ),
+    // TODO make obbjects collapsible
+    return Card(
+      clipBehavior: .hardEdge,
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          mainAxisSize: .min,
+          children: [
+            Row(
+              children: [
+                Text(widget.data.name, style: Theme.of(context).textTheme.bodyLarge),
+                Spacer(),
+                DropdownMenu<String>(
+                  dropdownMenuEntries: [
+                    if (widget.data.nullAllowed) DropdownMenuEntry(value: '', label: 'null'),
+                    for (var c in widget.data.choices) DropdownMenuEntry(value: c.name, label: c.name),
+                  ],
+                  onSelected: (value) {
+                    if (value == null) widget.propertyRenderer.value = null;
+                    widget.propertyRenderer.value = value;
+                  },
+                  initialSelection: widget.propertyRenderer.value ?? '',
                 ),
               ],
+            ),
+
+            if (widget.propertyRenderer.value == null)
+              SizedBox.shrink()
+            else ...[
+              if (widget.propertyRenderer.children
+                  .firstWhere(
+                    (e) => e.data.name == widget.propertyRenderer.value,
+                  )
+                  .children
+                  .isNotEmpty)
+                Divider(),
+              PropertyEntryRenderer(
+                widget.propertyRenderer.children.firstWhere(
+                  (e) => e.data.name == widget.propertyRenderer.value,
+                ),
+              ),
             ],
-          ),
+          ],
         ),
       ),
     );

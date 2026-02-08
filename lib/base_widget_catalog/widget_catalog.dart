@@ -60,7 +60,7 @@ class WidgetCatalog extends Catalog {
             ),
           backdropFilterCatalogEntry,
           clipRectCatalogEntry,
-          clipRoundedRectCatalogEntry,
+          clipRRectCatalogEntry,
           customPaintCatalogEntry,
           directionalityCatalogEntry,
           iconCatalogEntry,

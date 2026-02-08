@@ -25,7 +25,19 @@ MultipleObjectTypeChoice _radiusChoiceData(String name) => MultipleObjectTypeCho
   ],
 );
 
-CatalogEntry clipRoundedRectCatalogEntry = CatalogEntry(
+Radius fromChoiceData(Map data) {
+  if (data['.circular'] != null) {
+    return Radius.circular(data['.circular']['radius']);
+  } else if (data['.elliptical'] != null) {
+    return Radius.elliptical(
+      data['.elliptical']['x'],
+      data['.elliptical']['y'],
+    );
+  }
+  return Radius.zero;
+}
+
+CatalogEntry clipRRectCatalogEntry = CatalogEntry(
   'ClipRRect',
   docLink: 'https://api.flutter.dev/flutter/widgets/ClipRRect-class.html',
   icon: Icon(Symbols.crop),
@@ -35,14 +47,34 @@ CatalogEntry clipRoundedRectCatalogEntry = CatalogEntry(
       rad = BorderRadius.circular(variables['borderRadius']['.circular']['radius']);
     }
     if (variables['borderRadius']['.horizontal'] != null) {
-      // rad = BorderRadius.horizontal(left: Rad);
+      rad = BorderRadius.horizontal(
+        left: fromChoiceData(variables['borderRadius']['.horizontal']['left']),
+        right: fromChoiceData(variables['borderRadius']['.horizontal']['right']),
+      );
+    }
+    if (variables['borderRadius']['.vertical'] != null) {
+      rad = BorderRadius.vertical(
+        top: fromChoiceData(variables['borderRadius']['.vertical']['top']),
+        bottom: fromChoiceData(variables['borderRadius']['.vertical']['bottom']),
+      );
+    }
+    if (variables['borderRadius']['.only'] != null) {
+      rad = BorderRadius.only(
+        bottomLeft: fromChoiceData(variables['borderRadius']['.only']['bottomLeft']),
+        bottomRight: fromChoiceData(variables['borderRadius']['.only']['bottomRight']),
+        topLeft: fromChoiceData(variables['borderRadius']['.only']['topLeft']),
+        topRight: fromChoiceData(variables['borderRadius']['.only']['topRight']),
+      );
     }
     rad ??= BorderRadius.zero;
 
     return ClipRRect(
       borderRadius: rad,
       clipBehavior: Clip.values.firstWhere((e) => e.name == variables['clipBehavior']),
-      child: Image.asset('assets/imgs/shiroko-dance.gif'),
+      child: Image.asset(
+        'assets/imgs/shiroko-dance.gif',
+        key: Key('child'),
+      ),
     );
   },
   defaultParameters: [
@@ -65,6 +97,24 @@ CatalogEntry clipRoundedRectCatalogEntry = CatalogEntry(
           properties: [
             _radiusChoiceData('left'),
             _radiusChoiceData('right'),
+          ],
+        ),
+        ObjectPropertyData(
+          '.vertical',
+          type: BorderRadius,
+          properties: [
+            _radiusChoiceData('top'),
+            _radiusChoiceData('bottom'),
+          ],
+        ),
+        ObjectPropertyData(
+          '.only',
+          type: BorderRadius,
+          properties: [
+            _radiusChoiceData('bottomLeft'),
+            _radiusChoiceData('bottomRight'),
+            _radiusChoiceData('topLeft'),
+            _radiusChoiceData('topRight'),
           ],
         ),
       ],
