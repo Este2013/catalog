@@ -13,14 +13,15 @@ class Catalog {
 class CatalogEntry {
   String widgetName;
   String? docLink;
+  String? Function(String classname)? genDocLink;
   Widget? icon;
 
   Widget Function(BuildContext context, Color? iconColor)? iconBuilder;
-  Widget Function(CatalogEntryController controller, Map<String, dynamic> evaluatedVariables)? widgetBuilder;
+  Widget Function(BuildContext context, CatalogEntryController controller, Map<String, dynamic> evaluatedVariables)? widgetBuilder;
 
   List<CatalogPropertyData> defaultParameters;
 
-  CatalogEntry(this.widgetName, {this.docLink, this.icon, this.iconBuilder, this.widgetBuilder, this.defaultParameters = const []}) : assert(!(icon != null && iconBuilder != null), 'Can only provide icon or iconBuilder (not both)');
+  CatalogEntry(this.widgetName, {this.docLink, this.genDocLink, this.icon, this.iconBuilder, this.widgetBuilder, this.defaultParameters = const []}) : assert(!(icon != null && iconBuilder != null), 'Can only provide icon or iconBuilder (not both)');
 
   CatalogEntryController createDefaultController() {
     return CatalogEntryController(propertyData: defaultParameters);

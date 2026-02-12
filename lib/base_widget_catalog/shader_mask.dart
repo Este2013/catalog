@@ -2,13 +2,14 @@ import 'package:catalog/catalog.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import 'widget_catalog.dart';
+
 // TODO complete this entry
 
-CatalogEntry shaderMaskCatalogEntry = CatalogEntry(
+CatalogEntry shaderMaskCatalogEntry = BaseCatalogEntry(
   'ShaderMask',
-  docLink: 'https://api.flutter.dev/flutter/widgets/ShaderMask-class.html',
   icon: Icon(Symbols.shadow_rounded),
-  widgetBuilder: (controller, variables) => ShaderMask(
+  widgetBuilder: (_, controller, variables) => ShaderMask(
     blendMode: BlendMode.values.firstWhere((e) => e.name == variables['blendMode']),
     shaderCallback: (bounds) {
       Gradient grad;

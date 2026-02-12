@@ -2,6 +2,8 @@ import 'package:catalog/catalog.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import 'widget_catalog.dart';
+
 MultipleObjectTypeChoice _radiusChoiceData(String name) => MultipleObjectTypeChoice(
   name,
   nullAllowed: false,
@@ -37,11 +39,10 @@ Radius fromChoiceData(Map data) {
   return Radius.zero;
 }
 
-CatalogEntry clipRRectCatalogEntry = CatalogEntry(
+CatalogEntry clipRRectCatalogEntry = BaseCatalogEntry(
   'ClipRRect',
-  docLink: 'https://api.flutter.dev/flutter/widgets/ClipRRect-class.html',
   icon: Icon(Symbols.crop),
-  widgetBuilder: (ctrl, variables) {
+  widgetBuilder: (_, ctrl, variables) {
     BorderRadius? rad;
     if (variables['borderRadius']['.circular'] != null) {
       rad = BorderRadius.circular(variables['borderRadius']['.circular']['radius']);

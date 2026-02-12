@@ -2,11 +2,12 @@ import 'package:catalog/catalog.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-CatalogEntry iconCatalogEntry = CatalogEntry(
+import 'widget_catalog.dart';
+
+CatalogEntry iconCatalogEntry = BaseCatalogEntry(
   'Icon',
-  docLink: 'https://api.flutter.dev/flutter/widgets/Icon-class.html',
   icon: Icon(Symbols.emoji_symbols),
-  widgetBuilder: (controller, variables) => Icon(
+  widgetBuilder: (_, controller, variables) => Icon(
     variables['icon'] ?? Symbols.star,
     color: variables['color'],
     fill: variables['fill'],

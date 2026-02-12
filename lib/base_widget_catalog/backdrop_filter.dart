@@ -4,12 +4,13 @@ import 'package:catalog/catalog.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import 'widget_catalog.dart';
+
 // TODO Complete this with exemples from the documentation
-CatalogEntry backdropFilterCatalogEntry = CatalogEntry(
+CatalogEntry backdropFilterCatalogEntry = BaseCatalogEntry(
   'BackdropFilter',
-  docLink: 'https://api.flutter.dev/flutter/widgets/BackdropFilter-class.html',
   icon: Icon(Symbols.background_replace_rounded),
-  widgetBuilder: (ctrl, variables) => BackdropFilter(
+  widgetBuilder: (_, ctrl, variables) => BackdropFilter(
     filter: ImageFilter.blur(),
     child: Text('This text is a child widget of Directionality.\nAnother line of text.'),
   ),

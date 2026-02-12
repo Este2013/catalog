@@ -149,129 +149,137 @@ class _CatalogItemViewState extends State<CatalogItemView> {
   }
 
   @override
-  Widget build(BuildContext context) => Container(
-    margin: EdgeInsets.all(8),
-    decoration: BoxDecoration(
-      borderRadius: BorderRadius.circular(24),
-      border: Border.all(color: Theme.of(context).hintColor),
-    ),
-    clipBehavior: Clip.hardEdge,
-    child: DefaultTabController(
-      length: [
-        widget.item.docLink,
-        widget.item.widgetBuilder,
-      ].where((e) => e != null).length,
-      child: ClipRRect(
-        borderRadius: BorderRadiusGeometry.circular(24),
-        child: Scaffold(
-          appBar: AppBar(
-            title: Text(widget.item.widgetName),
-            leading: widget.item.icon,
-            actionsPadding: EdgeInsets.only(right: 8),
-            actions: [
-              if (widget.item.docLink != null)
-                IconButton.filledTonal(
-                  tooltip: 'Open the documentation',
-                  onPressed: () => launchUrl(Uri.parse(widget.item.docLink!)),
-                  icon: Icon(Symbols.book_2, fill: 1),
-                ),
-            ],
-            bottom: TabBar(
-              tabs: [
+  Widget build(BuildContext context) {
+    var docLink = widget.item.docLink ?? widget.item.genDocLink?.call(widget.item.widgetName);
+    return Container(
+      margin: EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Theme.of(context).hintColor),
+      ),
+      clipBehavior: Clip.hardEdge,
+      child: DefaultTabController(
+        length: [
+          docLink,
+          widget.item.widgetBuilder,
+        ].where((e) => e != null).length,
+        child: ClipRRect(
+          borderRadius: BorderRadiusGeometry.circular(24),
+          child: Scaffold(
+            appBar: AppBar(
+              title: Text(widget.item.widgetName),
+              leading: widget.item.icon,
+              actionsPadding: EdgeInsets.only(right: 8),
+              actions: [
+                if (docLink != null)
+                  IconButton.filledTonal(
+                    tooltip: 'Open the documentation',
+                    onPressed: () => launchUrl(Uri.parse(docLink)),
+                    icon: Icon(Symbols.book_2, fill: 1),
+                  ),
+              ],
+              bottom: TabBar(
+                tabs: [
+                  if (widget.item.widgetBuilder != null)
+                    Tab(
+                      text: 'Widget view',
+                      icon: Icon(Symbols.view_in_ar),
+                    ),
+                  if (docLink != null)
+                    Tab(
+                      text: 'Documentation',
+                      icon: Icon(Symbols.book_2),
+                    ),
+                ],
+              ),
+            ),
+            body: TabBarView(
+              children: [
                 if (widget.item.widgetBuilder != null)
-                  Tab(
-                    text: 'Widget view',
-                    icon: Icon(Symbols.view_in_ar),
+                  AnimatedBuilder(
+                    animation: itemController,
+                    builder: (context, _) => Row(
+                      children: [
+                        if (showWidgetOptions && widget.item.defaultParameters.isNotEmpty)
+                          Container(
+                            width: 400,
+                            padding: const EdgeInsets.only(left: 16.0, top: 8, bottom: 8),
+                            child: Column(
+                              children: [
+                                Row(
+                                  children: [
+                                    const Text(
+                                      'Widget parameters',
+                                      style: TextStyle(fontWeight: FontWeight.bold),
+                                    ),
+                                    Spacer(),
+                                    IconButton(
+                                      onPressed: null,
+                                      icon: Icon(Symbols.refresh),
+                                    ),
+                                  ],
+                                ),
+                                Expanded(
+                                  child: SingleChildScrollView(
+                                    child: PropertyListBuilder(widget: widget, itemController: itemController),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        if (showWidgetOptions) VerticalDivider(),
+                        Expanded(
+                          child: ClipRect(
+                            child: ScaffoldMessenger(
+                              child: Scaffold(
+                                drawer: Drawer(
+                                  width: 500,
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(12),
+                                    child: SingleChildScrollView(
+                                      child: SelectableText(
+                                        JsonEncoder.withIndent(
+                                          '   ',
+                                          (o) {
+                                            if (o is Alignment) return 'Alignment(${o.x}, ${o.y})';
+                                            if (o is Color) return o.toHexString();
+                                            if (o is IconData) return 'IconData(U+${o.codePoint.toRadixString(16).toUpperCase()})';
+                                            return o.toJson();
+                                          },
+                                        ).convert(itemController.evaluateVariables()),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                floatingActionButtonLocation: .startFloat,
+                                floatingActionButton: Builder(
+                                  builder: (context) => FloatingActionButton(
+                                    onPressed: Scaffold.of(context).openDrawer,
+                                    child: Icon(Symbols.data_object),
+                                  ),
+                                ),
+                                body: Builder(
+                                  // The builder is provided so context stays contained in this scaffold
+                                  builder: (context) => WidgetTreeExplorer(
+                                    child: widget.item.widgetBuilder!.call(context, itemController, itemController.evaluateVariables()),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                if (widget.item.docLink != null)
-                  Tab(
-                    text: 'Documentation',
-                    icon: Icon(Symbols.book_2),
-                  ),
+
+                if (docLink != null) DocsDisplayer(docLink),
               ],
             ),
           ),
-          body: TabBarView(
-            children: [
-              if (widget.item.widgetBuilder != null)
-                AnimatedBuilder(
-                  animation: itemController,
-                  builder: (context, _) => Row(
-                    children: [
-                      if (showWidgetOptions && widget.item.defaultParameters.isNotEmpty)
-                        Container(
-                          width: 400,
-                          padding: const EdgeInsets.only(left: 16.0, top: 8, bottom: 8),
-                          child: Column(
-                            children: [
-                              Row(
-                                children: [
-                                  const Text(
-                                    'Widget parameters',
-                                    style: TextStyle(fontWeight: FontWeight.bold),
-                                  ),
-                                  Spacer(),
-                                  IconButton(
-                                    onPressed: null,
-                                    icon: Icon(Symbols.refresh),
-                                  ),
-                                ],
-                              ),
-                              Expanded(
-                                child: SingleChildScrollView(
-                                  child: PropertyListBuilder(widget: widget, itemController: itemController),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      if (showWidgetOptions) VerticalDivider(),
-                      Expanded(
-                        child: ClipRect(
-                          child: Scaffold(
-                            drawer: Drawer(
-                              width: 500,
-                              child: Padding(
-                                padding: const EdgeInsets.all(12),
-                                child: SingleChildScrollView(
-                                  child: SelectableText(
-                                    JsonEncoder.withIndent(
-                                      '   ',
-                                      (o) {
-                                        if (o is Alignment) return 'Alignment(${o.x}, ${o.y})';
-                                        if (o is Color) return o.toHexString();
-                                        if (o is IconData) return 'IconData(U+${o.codePoint.toRadixString(16).toUpperCase()})';
-                                        return o.toJson();
-                                      },
-                                    ).convert(itemController.evaluateVariables()),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            floatingActionButtonLocation: .startFloat,
-                            floatingActionButton: Builder(
-                              builder: (context) => FloatingActionButton(
-                                onPressed: Scaffold.of(context).openDrawer,
-                                child: Icon(Symbols.data_object),
-                              ),
-                            ),
-                            body: WidgetTreeExplorer(
-                              child: widget.item.widgetBuilder!.call(itemController, itemController.evaluateVariables()),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-              if (widget.item.docLink != null) DocsDisplayer(widget.item.docLink!),
-            ],
-          ),
         ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 class PropertyListBuilder extends StatelessWidget {

@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:catalog/base_widget_catalog/align.dart';
 import 'package:catalog/base_widget_catalog/backdrop_filter.dart';
 import 'package:catalog/base_widget_catalog/clip_r_rect.dart';
 import 'package:catalog/base_widget_catalog/clip_rect.dart';
@@ -7,6 +8,7 @@ import 'package:catalog/base_widget_catalog/custom_paint.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 
+import 'absorb_pointer.dart';
 import 'directionality.dart';
 import 'icon.dart';
 import 'opacity.dart';
@@ -16,6 +18,13 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import 'shader_mask.dart';
+
+class BaseCatalogEntry extends CatalogEntry {
+  BaseCatalogEntry(super.widgetName, {super.icon, super.iconBuilder, super.widgetBuilder, super.defaultParameters = const []})
+    : super(
+        genDocLink: (widgetName) => 'https://api.flutter.dev/flutter/widgets/$widgetName-class.html',
+      );
+}
 
 /// Common widgets from flutter/widgets.dart.
 class WidgetCatalog extends Catalog {
@@ -27,7 +36,7 @@ class WidgetCatalog extends Catalog {
           if (kDebugMode)
             CatalogEntry(
               'TEST',
-              widgetBuilder: (controller, evaluatedVariables) => Text(
+              widgetBuilder: (context, controller, evaluatedVariables) => Text(
                 JsonEncoder.withIndent(
                   '   ',
                   (object) {
@@ -58,6 +67,10 @@ class WidgetCatalog extends Catalog {
                 NumRangePropertyData('int', minimum: 0, maximum: 3, integersOnly: true, defaultValue: 2),
               ],
             ),
+          absorbPointerCatalogEntry,
+          alignCatalogEntry,
+          // AbstractLayoutBuilder
+          // all actions stuff
           backdropFilterCatalogEntry,
           clipRectCatalogEntry,
           clipRRectCatalogEntry,

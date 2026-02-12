@@ -1,11 +1,12 @@
 import 'package:catalog/catalog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+
+import 'widget_catalog.dart';
 // import 'package:material_symbols_icons/symbols.dart';
 
-CatalogEntry placeholderCatalogEntry = CatalogEntry(
+CatalogEntry placeholderCatalogEntry = BaseCatalogEntry(
   'Placeholder',
-  docLink: 'https://api.flutter.dev/flutter/widgets/Placeholder-class.html',
   // icon: Icon(Symbols.rectangle),
   iconBuilder: (BuildContext context, Color? iconColor) => SvgPicture.asset(
     'assets/icons/placeholder.svg',
@@ -13,7 +14,7 @@ CatalogEntry placeholderCatalogEntry = CatalogEntry(
     width: 24,
     colorFilter: ColorFilter.mode(iconColor ?? Theme.of(context).listTileTheme.iconColor ?? Theme.of(context).iconTheme.color!, .srcIn),
   ),
-  widgetBuilder: (controller, variables) => Placeholder(
+  widgetBuilder: (_, controller, variables) => Placeholder(
     color: variables['color'] ?? const Color(0xFF455A64),
     fallbackHeight: (variables['fallbackHeight'] ?? 400.0).toDouble(),
     fallbackWidth: (variables['fallbackWidth'] ?? 400.0).toDouble(),

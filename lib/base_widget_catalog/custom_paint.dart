@@ -4,12 +4,13 @@ import 'package:catalog/catalog.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import 'widget_catalog.dart';
+
 // TODO Complete this with exemples from the documentation
-CatalogEntry customPaintCatalogEntry = CatalogEntry(
+CatalogEntry customPaintCatalogEntry = BaseCatalogEntry(
   'CustomPaint',
-  docLink: 'https://api.flutter.dev/flutter/widgets/CustomPaint-class.html',
   icon: Icon(Symbols.format_paint),
-  widgetBuilder: (ctrl, variables) => BackdropFilter(
+  widgetBuilder: (_, ctrl, variables) => BackdropFilter(
     filter: ImageFilter.blur(),
     child: Text('This text is a child widget of Directionality.\nAnother line of text.'),
   ),

@@ -2,11 +2,12 @@ import 'package:catalog/catalog.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-CatalogEntry opacityCatalogEntry = CatalogEntry(
+import 'widget_catalog.dart';
+
+CatalogEntry opacityCatalogEntry = BaseCatalogEntry(
   'Opacity',
-  docLink: 'https://api.flutter.dev/flutter/widgets/Opacity-class.html',
   icon: Icon(Symbols.opacity),
-  widgetBuilder: (controller, variables) => Opacity(
+  widgetBuilder: (_, controller, variables) => Opacity(
     opacity: variables['opacity'],
     alwaysIncludeSemantics: variables['alwaysIncludeSemantics'],
     child: Text(
