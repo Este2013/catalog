@@ -221,7 +221,7 @@ class _CatalogItemViewState extends State<CatalogItemView> {
                                 ),
                                 Expanded(
                                   child: SingleChildScrollView(
-                                    child: PropertyListBuilder(widget: widget, itemController: itemController),
+                                    child: PropertyListBuilder(widget: widget, itemController: itemController, depth: 0),
                                   ),
                                 ),
                               ],
@@ -244,6 +244,7 @@ class _CatalogItemViewState extends State<CatalogItemView> {
                                             if (o is Alignment) return 'Alignment(${o.x}, ${o.y})';
                                             if (o is Color) return o.toHexString();
                                             if (o is IconData) return 'IconData(U+${o.codePoint.toRadixString(16).toUpperCase()})';
+                                            if (o is BorderStyle) return o.name;
                                             return o.toJson();
                                           },
                                         ).convert(itemController.evaluateVariables()),
@@ -287,24 +288,28 @@ class PropertyListBuilder extends StatelessWidget {
     super.key,
     required this.widget,
     required this.itemController,
+    required this.depth,
   });
 
   final CatalogItemView widget;
   final CatalogEntryController itemController;
+  final int depth;
 
   @override
   Widget build(BuildContext context) {
     return Column(
-      children: [for (var property in itemController.propertyRenderers) PropertyEntryRenderer(property)],
+      children: [for (var property in itemController.propertyRenderers) PropertyEntryRenderer(property, depth: depth + 1)],
     );
   }
 }
 
 class PropertyEntryRenderer extends StatelessWidget {
-  const PropertyEntryRenderer(this.propertyRenderer, {super.key});
+  const PropertyEntryRenderer(this.propertyRenderer, {super.key, required this.depth});
 
   final CatalogPropertyRenderObject propertyRenderer;
   CatalogPropertyData get property => propertyRenderer.data;
+
+  final int depth;
 
   @override
   Widget build(BuildContext context) {
@@ -312,13 +317,12 @@ class PropertyEntryRenderer extends StatelessWidget {
       return MultipleObjectChoiceEntryProperty(
         property as MultipleObjectTypeChoice,
         propertyRenderer: propertyRenderer,
-        // value: propertyRenderer.isNull ? null : propertyRenderer.value,
-        // setNullStatus: (bool b) => propertyRenderer.isNull = b,
+        depth: depth + 1,
       );
     } else if (property is ObjectPropertyData) {
       return Column(
         children: [
-          for (var r in propertyRenderer.children) PropertyEntryRenderer(r),
+          for (var r in propertyRenderer.children) PropertyEntryRenderer(r, depth: depth + 1),
         ],
       );
     } else if (property is BooleanPropertyData) {
@@ -374,24 +378,23 @@ class PropertyEntryRenderer extends StatelessWidget {
   }
 }
 
-class MultipleObjectChoiceEntryProperty<T> extends StatefulWidget {
-  const MultipleObjectChoiceEntryProperty(this.data, {super.key, required this.propertyRenderer, /*required this.setNullStatus,*/ this.valueToString});
+class MultipleObjectChoiceEntryProperty<T> extends StatelessWidget {
+  const MultipleObjectChoiceEntryProperty(this.data, {super.key, required this.propertyRenderer, /*required this.setNullStatus,*/ this.valueToString, required this.depth});
 
   final MultipleObjectTypeChoice data;
   // final T value;
   final CatalogPropertyRenderObject propertyRenderer;
   final String? Function(T value)? valueToString;
 
-  @override
-  State<MultipleObjectChoiceEntryProperty<T>> createState() => _MultipleObjectChoiceEntryPropertyState<T>();
-}
+  final int depth;
 
-class _MultipleObjectChoiceEntryPropertyState<T> extends State<MultipleObjectChoiceEntryProperty<T>> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     // TODO make obbjects collapsible
     return Card(
       clipBehavior: .hardEdge,
+      // color: _depthAccent(Theme.of(context).colorScheme.surfaceContainer, widget.depth),
+      color: depth % 2 == 1 ? Theme.of(context).colorScheme.surfaceContainerHigh : null,
       child: Padding(
         padding: const EdgeInsets.all(8.0),
         child: Column(
@@ -399,36 +402,37 @@ class _MultipleObjectChoiceEntryPropertyState<T> extends State<MultipleObjectCho
           children: [
             Row(
               children: [
-                Text(widget.data.name, style: Theme.of(context).textTheme.bodyLarge),
+                Text(data.name, style: Theme.of(context).textTheme.bodyLarge),
                 Spacer(),
                 DropdownMenu<String>(
                   dropdownMenuEntries: [
-                    if (widget.data.nullAllowed) DropdownMenuEntry(value: '', label: 'null'),
-                    for (var c in widget.data.choices) DropdownMenuEntry(value: c.name, label: c.name),
+                    if (data.nullAllowed) DropdownMenuEntry(value: '', label: 'null'),
+                    for (var c in data.choices) DropdownMenuEntry(value: c.name, label: c.name),
                   ],
                   onSelected: (value) {
-                    if (value == null) widget.propertyRenderer.value = null;
-                    widget.propertyRenderer.value = value;
+                    if (value == null) propertyRenderer.value = null;
+                    propertyRenderer.value = value;
                   },
-                  initialSelection: widget.propertyRenderer.value ?? '',
+                  initialSelection: propertyRenderer.value ?? '',
                 ),
               ],
             ),
 
-            if (widget.propertyRenderer.value == null)
+            if (propertyRenderer.value == null)
               SizedBox.shrink()
             else ...[
-              if (widget.propertyRenderer.children
+              if (propertyRenderer.children
                   .firstWhere(
-                    (e) => e.data.name == widget.propertyRenderer.value,
+                    (e) => e.data.name == propertyRenderer.value,
                   )
                   .children
                   .isNotEmpty)
                 Divider(),
               PropertyEntryRenderer(
-                widget.propertyRenderer.children.firstWhere(
-                  (e) => e.data.name == widget.propertyRenderer.value,
+                propertyRenderer.children.firstWhere(
+                  (e) => e.data.name == propertyRenderer.value,
                 ),
+                depth: depth + 1,
               ),
             ],
           ],

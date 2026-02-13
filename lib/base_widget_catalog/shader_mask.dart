@@ -2,13 +2,14 @@ import 'package:catalog/catalog.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import 'base_classes_data/alignments.dart';
 import 'widget_catalog.dart';
 
 // TODO complete this entry
 
 CatalogEntry shaderMaskCatalogEntry = BaseCatalogEntry(
   'ShaderMask',
-  icon: Icon(Symbols.shadow_rounded),
+  icon: Icon(Symbols.transition_fade),
   widgetBuilder: (_, controller, variables) => ShaderMask(
     blendMode: BlendMode.values.firstWhere((e) => e.name == variables['blendMode']),
     shaderCallback: (bounds) {
@@ -63,25 +64,7 @@ CatalogEntry shaderMaskCatalogEntry = BaseCatalogEntry(
         ObjectPropertyData(
           'RadialGradient',
           type: Gradient,
-          properties: [
-            EnumPropertyData(
-              'alignment',
-              choices: [
-                Alignment.topLeft,
-                Alignment.topCenter,
-                Alignment.topRight,
-                Alignment.centerLeft,
-                Alignment.center,
-                Alignment.centerRight,
-                Alignment.bottomLeft,
-                Alignment.bottomCenter,
-                Alignment.bottomRight,
-              ],
-              defaultValueWhenNotNull: Alignment.center,
-              nullAllowed: false,
-              valueToString: (value) => value.toString().split('.')[1],
-            ),
-          ],
+          properties: [alignmentChoiceData],
         ),
         ObjectPropertyData(
           'SweepGradient',

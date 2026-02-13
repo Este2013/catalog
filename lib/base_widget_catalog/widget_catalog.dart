@@ -12,12 +12,15 @@ import 'absorb_pointer.dart';
 import 'directionality.dart';
 import 'icon.dart';
 import 'opacity.dart';
+import 'physical_model.dart';
+import 'physical_shape.dart';
 import 'placeholder.dart';
 import 'package:catalog/catalog.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import 'shader_mask.dart';
+import 'transform.dart';
 
 class BaseCatalogEntry extends CatalogEntry {
   BaseCatalogEntry(super.widgetName, {super.icon, super.iconBuilder, super.widgetBuilder, super.defaultParameters = const []})
@@ -78,8 +81,11 @@ class WidgetCatalog extends Catalog {
           directionalityCatalogEntry,
           iconCatalogEntry,
           opacityCatalogEntry,
+          physicalModelCatalogEntry,
+          physicalShapeCatalogEntry,
           placeholderCatalogEntry,
           shaderMaskCatalogEntry,
+          transformCatalogEntry,
         ],
         fallbackEntryIcon: Icon(Symbols.widgets),
       );
